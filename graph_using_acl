@@ -1,0 +1,185 @@
+struct graph{
+    struct edge{
+        ll to;
+        ll cost;
+    };
+    struct F{
+        ll cost;
+        ll from;
+        ll to;
+ bool operator>(const F& other) const {
+        return cost > other.cost;
+    }
+    };
+    public:
+    ll N;
+    vector<vector<edge>> G;
+    vector<ll>dist;
+  
+    
+     
+
+    void init (ll n){
+        N = n;
+        G.resize(N);
+        dist.resize(N);
+        rep(i,N){
+            dist[i] = inf;
+        }
+    }
+    void clear(ll n){
+        N = n;
+        rep(i,N){
+            dist[i] = inf;
+        }
+    }
+    void add_edge(ll u, ll v, ll cost){
+        G[u].push_back({v,cost});
+       
+    }
+    void djikstra(ll s){
+        // start from node "s"
+        rep(i,N){
+            dist[i] = inf;
+        }
+        priority_queue<pair<ll,ll>,vector<pair<ll,ll>>,greater<pair<ll,ll>>> que;
+        dist[s] = 0;
+        que.push({0,s});
+        while(!que.empty()){
+            pair<ll,ll> p = que.top();
+            que.pop();
+            ll v = p.second;
+            if(dist[v] < p.first) continue;
+            for(auto e : G[v]){
+                if(dist[e.to] > dist[v] + e.cost){
+                    dist[e.to] = dist[v] + e.cost;
+                    que.push({dist[e.to],e.to});
+                }
+            }
+        }
+    }
+    void bellman_ford(ll s){
+        // start from node "s"
+      for(ll i=0;i<N;i++){
+            dist[i] = inf;
+        }
+        dist[s] = 0;
+        queue<ll>que;
+        que.push(s);
+        while(!que.empty()){
+            ll v = que.front();
+            que.pop();
+            for(auto e : G[v]){
+                if(dist[e.to] > dist[v] + e.cost){
+                    dist[e.to] = dist[v] + e.cost;
+                    que.push(e.to);
+                }
+            }
+        }
+        
+    }
+    // MST
+    long long kuraskal(){
+        priority_queue<F,vector<F>,greater<F>> que;
+        rep(i,N){
+            for(auto e : G[i]){
+                que.push({e.cost,i,e.to});
+            }
+        }
+        ll res = 0;
+        dsu d(N);
+        while(!que.empty()){
+            F f = que.top();
+            que.pop();
+            if(d.same(f.from,f.to)) continue;
+            d.merge(f.from,f.to);
+            res += f.cost;
+        }
+        return res;
+ 
+    }
+
+    // トポロジカルソート
+    vector<ll> tsort(){
+        vector<ll> res;
+        vector<ll> in(N);
+        rep(i,N){
+            for(auto e : G[i]){
+                in[e.to]++;
+            }
+        }
+        queue<ll> que;
+        rep(i,N){
+            if(in[i] == 0) que.push(i);
+        }
+        while(!que.empty()){
+            ll v = que.front();
+            que.pop();
+            res.push_back(v);
+            for(auto e : G[v]){
+                in[e.to]--;
+                if(in[e.to] == 0) que.push(e.to);
+            }
+        }
+        return res;
+    }
+
+
+    //強連結成分分解
+    vector<vector<ll>> scc(){
+        vector<vector<ll>> res;
+        vector<vector<ll>> rG(N);
+        rep(i,N){
+            for(auto e : G[i]){
+                rG[e.to].push_back(i);
+            }
+        }
+        vector<ll> vs;
+        vector<bool> used(N);
+        function<void(ll)> dfs = [&](ll v){
+            used[v] = true;
+            for(auto e : G[v]){
+                if(!used[e.to]) dfs(e.to);
+            }
+            vs.push_back(v);
+        };
+        function<void(ll)> rdfs = [&](ll v){
+            used[v] = true;
+            res.back().push_back(v);
+            for(auto e : rG[v]){
+                if(!used[e]) rdfs(e);
+            }
+        };
+        rep(i,N){
+            if(!used[i]) dfs(i);
+        }
+        fill(all(used),false);
+        reverse(all(vs));
+        for(auto v : vs){
+            if(!used[v]){
+                res.push_back(vector<ll>());
+                rdfs(v);
+            }
+        }
+        return res;
+    }
+    //二部グラフ判定
+    bool is_bipartite(){
+        vector<ll> color(N,-1);
+        function<bool(ll,ll)> dfs = [&](ll v,ll c){
+            color[v] = c;
+            for(auto e : G[v]){
+                if(color[e.to] == c) return false;
+                if(color[e.to] == -1 && !dfs(e.to,1-c)) return false;
+            }
+            return true;
+        };
+        rep(i,N){
+            if(color[i] == -1){
+                if(!dfs(i,0)) return false;
+            }
+        }
+        return true;
+    }
+  //end struct graph
+};
